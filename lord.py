@@ -3,16 +3,11 @@ import requests
 import time
 import config
 
-COM_PORT = "COM3"
-BS_BAUD = 921600
-NODE_ADD = 56609
-THINGWORX_HOST = "localhost"
-
 print("Setting up basestation and node configuration")
 print("Using MSCL library version: " + mscl.LibVersion.asString())
 
 def sendDataToThingWorx(thingName, key, data):
-    url = "http://" + THINGWORX_HOST + "/Thingworx/Things/" + thingName + "/Properties/" + key
+    url = "http://" + config.THINGWORX_HOST + "/Thingworx/Things/" + thingName + "/Properties/" + key
 
     querystring = {"appKey": config.APP_KEY}
 
@@ -28,7 +23,7 @@ def sendDataToThingWorx(thingName, key, data):
     #print(response.text)
 
 def getCurrentConfig(node):
-    print("Configuration of node: " + str(NODE_ADD))
+    print("Configuration of node: " + str(config.NODE_ADDR))
     print("# of Triggers:", node.getNumDatalogSessions())
     print("User Inactivity Timeout:", node.getInactivityTimeout(), "seconds")
     print("Total active channels:", node.getActiveChannels().count())
@@ -61,7 +56,7 @@ def printSweepData(sweep):
 
 def cleanUp(node):
     print("Cleaning up..")
-    print("Setting node " + str(NODE_ADD) + " to idle")
+    print("Setting node " + str(config.NODE_ADDR) + " to idle")
     status = node.setToIdle()
     while not status.complete(300):
         print(".")
@@ -74,8 +69,8 @@ def cleanUp(node):
         print("Setting to idle failed")
 
 try:
-    print("Connection basestation on " + COM_PORT)
-    conn = mscl.Connection.Serial(COM_PORT, BS_BAUD)
+    print("Connection basestation on " + config.COM_PORT)
+    conn = mscl.Connection.Serial(config.COM_PORT, config.BS_BAUD)
     bs = mscl.BaseStation(conn)
 
     if (bs.ping()):
@@ -84,18 +79,18 @@ try:
         print("Failed to ping the created BaseStation")
         exit()
 
-    node = mscl.WirelessNode(NODE_ADD, bs)
+    node = mscl.WirelessNode(config.NODE_ADDR, bs)
     if (node.ping()):
-        print("Connected to node at address " + str(NODE_ADD) + " succesfully")
+        print("Connected to node at address " + str(config.NODE_ADDR) + " succesfully")
     else:
-        print("Failed to ping node " + str(NODE_ADD))
+        print("Failed to ping node " + str(config.NODE_ADDR))
 
     getCurrentConfig(node)
 
     print("Creating a synchronized network for sampling the node(s)")
     network = mscl.SyncSamplingNetwork(bs)
 
-    print("Adding node " + str(NODE_ADD) + " to network")
+    print("Adding node " + str(config.NODE_ADDR) + " to network")
     network.addNode(node)
     printNetworkInfo(network)
 
