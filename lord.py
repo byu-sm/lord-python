@@ -1,6 +1,7 @@
 import mscl
 import requests
 import time
+import statistics
 import config
 
 print("Setting up basestation and node configuration")
@@ -15,12 +16,11 @@ def sendDataToThingWorx(thingName, key, data):
     headers = {
         'Content-Type': "application/json",
         'Authorization': config.HTTP_BASIC_AUTH,
-        'Cache-Control': "no-cache",
-        'Postman-Token': "d8280d1d-64a9-da31-ed2b-0948a24a6966"
+        'Cache-Control': "no-cache"
         }
-
+    #print(url, payload, headers, querystring)
     response = requests.request("PUT", url, data=payload, headers=headers, params=querystring)
-    #print(response.text)
+    #print(response.status_code)
 
 def getCurrentConfig(node):
     print("Configuration of node: " + str(config.NODE_ADDR))
@@ -35,6 +35,12 @@ def printNetworkInfo(network):
     print("Percent of Bandwidth: ", network.percentBandwidth())
     print("Lossless Enabled: ", network.lossless())
 
+def getCh1(sweep):
+    data = {}
+    for dataPoint in sweep.data():
+        data[dataPoint.channelName()] = dataPoint.as_float()
+    return data["ch1"]
+
 def printSweepData(sweep):
     packet = {"nodeAddress": sweep.nodeAddress(),
             "timestamp": sweep.timestamp(),
@@ -43,15 +49,15 @@ def printSweepData(sweep):
             "baseRSSI": sweep.baseRssi(),
             "nodeRSSI": sweep.nodeRssi()}
 
-    data = {}
+    data = []
     for dataPoint in sweep.data():
-        data[dataPoint.channelName()] = dataPoint.as_float()
+        data.append(dataPoint.as_float())
 
-    packet["data"] = data
+    #packet["data"] = data
 
-    print(packet)
-    print(str(packet["data"]["ch1"]) + " : " + str(packet["data"]["ch7"]))
-    sendDataToThingWorx("LordThing", "temp", packet["data"]["ch1"])
+    print(data)
+    #print(str(packet["data"]["ch1"]) + " : " + str(packet["data"]["ch7"]))
+    #sendDataToThingWorx("LordThing", "temp", packet["data"]["ch1"])
 
 
 def cleanUp(node):
@@ -103,11 +109,17 @@ try:
     print("Parsing the data (while True loop)")
     while True:
         # get all data sweeps (timeout 500ms)
-        sweeps = bs.getData(500)
+        sweeps = bs.getData(1000)
 
+        data = []
         for sweep in sweeps:
-            printSweepData(sweep)
-        time.sleep(1)
+            #printSweepData(sweep)
+            data.append(getCh1(sweep))
+
+        if len(data) > 0:
+            val = statistics.median(data)
+            print(val)
+            sendDataToThingWorx("LordThing", "temp", val)
 except KeyboardInterrupt:
     cleanUp(node)
 
