@@ -76,7 +76,8 @@ def cleanUp(node):
 
 try:
     print("Connection basestation on " + config.COM_PORT)
-    conn = mscl.Connection.Serial(config.COM_PORT, config.BS_BAUD)
+    #conn = mscl.Connection.Serial(config.COM_PORT, config.BS_BAUD)
+    conn = mscl.Connection.UnixSocket()
     bs = mscl.BaseStation(conn)
 
     if (bs.ping()):
