@@ -3,17 +3,33 @@ import config
 
 from tkinter import *
 
+def addNodeToBasestation():
+    print("testing")
+
+def add_node():
+    addNodeDisplay = Tk()
+    Label(addNodeDisplay, text="Node Address").grid(row=0, column=0)
+    e1 = Entry(addNodeDisplay)
+    e1.grid(row=0, column=1)
+    Button(addNodeDisplay, text='Add Node', command=addNodeToBasestation).grid(row=1)
+    mainloop()
+
 def displayNodes(nodes):
     nodeDisplay = Tk()
-    Label(nodeDisplay, text=nodes).grid(row=0)
-    e1 = Entry(nodeDisplay)
-    e1.grid(row=0, column=0)
+    nodeStr = config.basestation["nodes"]
 
-    Button(nodeDisplay(), text='Add Node', command=add_node).grid(row=1, column=0, sticky=W, pady=4)
-    Button(nodeDisplay(), text='Quit', command=nodeDisplay.quit).grid(row=1, column=1, sticky=W, pady=4)
+    e1 = Text(nodeDisplay,height=2)
+    e1.insert(INSERT, nodeStr)
+    e1.pack()
+    e1.grid(row=0, column=0)
+    
+    Button(nodeDisplay, text='Add Node', command=add_node).grid(row=1, column=0, sticky=W, pady=4)
+
+    mainloop()
+
 
 def displayPrompt(bs,nodes):
-    if bs == null:
+    if bs is None:
         promptStation()
     else:
         displayNodes(nodes)
@@ -24,22 +40,22 @@ def main():
     networks = []
     nodes_master = []
     
-    conn = mscl.Connection.Serial(config.basestation["com_port"], basestation["baud_rate"])
+    conn = mscl.Connection.Serial(config.basestation["com_port"], config.basestation["baud_rate"])
     bs = mscl.BaseStation(conn)
     network = mscl.SyncSamplingNetwork(bs)
 
     nodes = []
-    for n in config.basestations["nodes"]:
+    for n in config.basestation["nodes"]:
         node = mscl.WirelessNode(n["address"], bs)
-        nodes.add(node)
+        nodes.append(node)
         network.addNode(node)
-    nodes_master.add(nodes)
+    nodes_master.append(nodes)
 
     displayPrompt(bs,nodes)
 
     # Read config (bs["config"])
     network.applyConfiguration()
-    networks.add(network)
+    networks.append(network)
 
 if __name__ == "__main__":
     main()
