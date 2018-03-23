@@ -24,10 +24,15 @@ class NodePrompt:
         self.initUI()
 
     def initUI(self):
+        node_str = ""
+        for n in config.basestation["nodes"]:
+            node_str += str(n["address"])
+            node_str += ","
         self.parent.title("Add Node")
         self.s1 = Label(self.parent, text="Node Address (Comma delimited):")
         self.s1.grid(row=0, column=0)
         self.e1 = Entry(self.parent)
+        self.e1.insert(0, node_str[:-1])
         self.e1.grid(row=0, column=1)
         self.b1 = Button(self.parent, text='Add Node', command=self.addNode)
         self.b2 = Button(self.parent, text='Cancel', command=self.parent.destroy)
@@ -129,7 +134,13 @@ def getCh1(sweep):
     for dataPoint in sweep.data():
         data[dataPoint.channelName()] = dataPoint.as_float()
     return data["ch1"]
-        
+
+def getCh2(sweep):
+    data = {}
+    for dataPoint in sweep.data():
+        data[dataPoint.channelName()] = dataPoint.as_float()
+    return data["ch2"]
+
 def main():
     print("Intializing...")
     
