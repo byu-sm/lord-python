@@ -1,6 +1,7 @@
 import mscl
 import config
 import statistics
+import thingworx
 
 from tkinter import *
 
@@ -24,25 +25,37 @@ class NodePrompt:
         self.initUI()
 
     def initUI(self):
-        node_str = ""
+        node_addr_str = ""
+        node_type_str = ""
         for n in config.basestation["nodes"]:
-            node_str += str(n["address"])
-            node_str += ","
+            node_addr_str += str(n["address"])
+            node_addr_str += ","
+            node_type_str += str(n["type"])
+            node_type_str += ","
         self.parent.title("Add Node")
         self.s1 = Label(self.parent, text="Node Address (Comma delimited):")
         self.s1.grid(row=0, column=0)
         self.e1 = Entry(self.parent)
-        self.e1.insert(0, node_str[:-1])
+        self.e1.insert(0, node_addr_str[:-1])
         self.e1.grid(row=0, column=1)
+        self.s2 = Label(self.parent, text="Node Types (Comma delimited):")
+        self.s2.grid(row=1, column=0)
+        self.e2 = Entry(self.parent)
+        self.e2.insert(0, node_type_str[:-1])
+        self.e2.grid(row=1, column=1)
         self.b1 = Button(self.parent, text='Add Node', command=self.addNode)
         self.b2 = Button(self.parent, text='Cancel', command=self.parent.destroy)
         self.b1.grid(row=2, column=0, sticky=W)
         self.b2.grid(row=2, column=1, sticky=W)
 
     def addNode(self):
-        node_strings = self.e1.get().split(",")
-        for n in node_strings:
-            self.nodes.append(connectToNode(n, self.bs))
+        node_addrs = self.e1.get().split(",")
+        node_types = self.e2.get().split(",")
+        len_addr = len(node_addrs)
+        len_types = len(node_types)
+        if len_addr == len_types:
+            for i in range(0,len_addr-1):
+                self.nodes.append({"address": node_addrs[i], "type": node_types[i]})
         self.parent.destroy()
 
     def getNodes(self):
@@ -80,7 +93,7 @@ class StationPrompt:
     def getBaseStation(self):
         return self.bs
 
-class Configuration:
+class Tw_config:
     def __init__(self, parent):
         self.parent = parent
         self.frame = Frame(self.parent)
@@ -89,44 +102,33 @@ class Configuration:
         self.initUI()
 
     def initUI(self):
-        self.parent.title("BaseStation and Node Configuration")
-        self.s1 = Label(self.parent, text="BaseStation:")
-        self.s2 = Label(self.parent, text="Nodes:")
+        self.parent.title("ThingWorx Host Configuration")
+        self.s1 = Label(self.parent, text="Server IP:")
+        self.s2 = Label(self.parent, text="APP_Key:")
+        self.s3 = Label(self.parent, text="Username:")
+        self.s4 = Label(self.parent, text="Password:")
         self.s1.grid(row=0, column=0)
         self.s2.grid(row=1, column=0)
-        self.t1 = StringVar()
-        self.t2 = StringVar()
-        self.v1 = Label(self.parent, text=self.t1.get())
-        self.v2 = Label(self.parent, text=self.t2.get())
-        self.v1.grid(row=0, column=1)
-        self.v2.grid(row=1, column=1)
-        self.b1 = Button(self.parent, text='Add BaseStation', command=self.promptStation).grid(row=2, column=0, sticky=W)
-        self.b2 = Button(self.parent, text='Add Node', command=self.promptNode).grid(row=2, column=1, sticky=W)
-        self.b3 = Button(self.parent, text='Start Sampling', command=self.closeConfig).grid(row=2, column=2, sticky=W)
+        self.s3.grid(row=2, column=0)
+        self.s4.grid(row=3, column=0)
+        self.e1 = Entry(self.parent)
+        self.e2 = Entry(self.parent)
+        self.e3 = Entry(self.parent)
+        self.e4 = Entry(self.parent)
+        self.e1.insert(0, config.THINGWORX_HOST)
+        self.e2.insert(0, config.APP_KEY)
+        self.e3.insert(0, config.HTTP_USERNAME)
+        self.e4.insert(0, config.HTTP_PASSWORD)
+        self.e1.grid(row=0, column=1)
+        self.e2.grid(row=1, column=1)
+        self.e3.grid(row=2, column=1)
+        self.e4.grid(row=3, column=1)
+        self.b1 = Button(self.parent, text='Configure Basestation', command=self.promptStation).grid(row=4, column=0, sticky=W)
 
     def promptStation(self):
-        self.newWindow = Toplevel(self.parent)
-        self.SPApp = StationPrompt(self.newWindow)
-
-    def promptNode(self):
-        self.bs = self.SPApp.getBaseStation()
-        self.newWindow = Toplevel(self.parent)
-        self.NApp = NodePrompt(self.newWindow, self.bs)
-
-    def setBsText(self, string):
-        self.t1.set(string)
-
-    def setNodesText(self, string):
-        self.t2.set(string)
-
-    def getBaseStation(self):
-        return self.bs
-
-    def getNodes(self):
-        return self.nodes
+        self.closeConfig()
 
     def closeConfig(self):
-        self.nodes = self.NApp.getNodes()
         self.parent.destroy()
 
 def getCh1(sweep):
@@ -141,6 +143,29 @@ def getCh2(sweep):
         data[dataPoint.channelName()] = dataPoint.as_float()
     return data["ch2"]
 
+def printSweepData(sweep):
+    data = []
+    for dataPoint in sweep.data():
+        data.append(dataPoint.as_float())
+
+    print(data)
+
+def getDataTempSensor(sweep, data):
+    data.append(getCh1(sweep))
+
+    if len(data) > 0:
+        val = statistics.median(data)
+        print(val)
+        print(thingworx.putDataToThing("LordThing", "temp", val))
+
+def getDataForceSensor(sweep):
+    print(sweep.data())
+    return
+
+def updateConfig():
+    #Update Config Here
+    return None
+
 def main():
     print("Intializing...")
     
@@ -150,32 +175,55 @@ def main():
     nodes = []
 
     root = Tk()
-    app = Configuration(root)
+    app = Tw_config(root)
+    root.mainloop()
+
+    root = Tk()
+    app = StationPrompt(root)
     root.mainloop()
     bs = app.getBaseStation()
-    network = mscl.SyncSamplingNetwork(bs)
-    nodes = app.getNodes()
+    print(bs)
+
+    root = Tk()
+    app = NodePrompt(root, bs)
+    root.mainloop()
+    nodes_temp = app.getNodes()
+    for n in nodes_temp:
+        nodes.append(connectToNode(n["address"], bs))
     print(nodes)
-    for node in nodes:
-        network.addNode(node)
 
-    # Read config (bs["config"])
-    network.applyConfiguration()
-    network.startSampling()
+    #updateConfig(bs, nodes)
 
-    print("Parsing the data (while True loop)")
-    while True:
-        # get all data sweeps (timeout 500ms)
-        sweeps = bs.getData(1000)
+    if bs:
+        network = mscl.SyncSamplingNetwork(bs)
+        if len(nodes) > 0:
+            print(nodes)
+            for node in nodes:
+                network.addNode(node)
 
-        data = []
-        for sweep in sweeps:
-            #printSweepData(sweep)
-            data.append(getCh1(sweep))
+            # Read config (bs["config"])
+            network.applyConfiguration()
+            network.startSampling()
 
-        if len(data) > 0:
-            val = statistics.median(data)
-            print(val)
+            print("Parsing the data (while True loop)")
+            while True:
+                # get all data sweeps (timeout 500ms)
+                sweeps = bs.getData(1000)
+
+                data = []
+                for sweep in sweeps:
+                    #printSweepData(sweep)
+                    n_addr = sweep.nodeAddress()
+                    n_type = None
+                    for n in nodes_temp:
+                        if n["address"] == n_addr:
+                            n_type = n["type"]
+                        else:
+                            n_type = "force"
+                    if n_type == "temp":
+                        getDataTempSensor(sweep, data)
+                    elif n_type == "force":
+                        getDataForceSensor(sweep)
 
 if __name__ == "__main__":
     main()
