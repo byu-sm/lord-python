@@ -38,3 +38,57 @@ def connectToNode(node_addr, bs):
     node = mscl.WirelessNode(int(node_addr), bs)
     print("Connect node: " + node_addr)
     return node
+
+class TempNode:
+    def __init__(self, node_addr, node_type):
+        self.node_addr = node_addr
+        self.node_type = node_type
+        self.node = None
+
+    def connectNode(self, bs):
+        self.node = mscl.WirelessNode(int(self.node_addr), bs)
+        print("Connect node: " + self.node_addr)
+        return self.node
+
+    def getNodeType(self):
+        return self.node_type
+
+    def cleanUp(self):
+        print("Cleaning up node: " + self.node_addr)
+        status = self.node.setToIdle()
+        while not status.complete(300):
+            print(".")
+        result = status.result()
+        if result == mscl.SetToIdleStatus.setToIdleResult_success:
+            print("Set " + self.node_addr + " to idle")
+        elif result == mscl.SetToIdleStatus.canceled:
+            print("Setting " + self.node_addr + " to idle cancelled")
+        else:
+            print("Setting " + self.node_addr + " to idle failed")
+
+class ForceNode:
+    def __init__(self, node_addr, node_type):
+        self.node_addr = node_addr
+        self.node_type = node_type
+        self.node = None
+
+    def connectNode(self, bs):
+        self.node = mscl.WirelessNode(int(self.node_addr), bs)
+        print("Connect node: " + self.node_addr)
+        return self.node
+
+    def getNodeType(self):
+        return self.node_type
+
+    def cleanUp(self):
+        print("Cleaning up node: " + self.node_addr)
+        status = self.node.setToIdle()
+        while not status.complete(300):
+            print(".")
+        result = status.result()
+        if result == mscl.SetToIdleStatus.setToIdleResult_success:
+            print("Set " + self.node_addr + " to idle")
+        elif result == mscl.SetToIdleStatus.canceled:
+            print("Setting " + self.node_addr + " to idle cancelled")
+        else:
+            print("Setting " + self.node_addr + " to idle failed")

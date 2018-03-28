@@ -136,6 +136,7 @@ class ThingWorxConfig:
 
 def main():
     print("Initializing connection to Lord Sensors and ThingWorx")
+    node_obj = []
 
     win1 = Tk()
     app1 = StationConfig(win1)
@@ -155,23 +156,36 @@ def main():
     tw_config = app3.getConfig()
 
     #updateConfig(bs, nodes, tw_config)
-    
-    bs = lord.connectToBaseStation(com_port, baud_rate)
-    if bs:
-        network = mscl.SyncSamplingNetwork(bs)
-        if len(nodes) > 0:
-            for node in nodes:
-                network.addNode(lord.connectToNode(node["address"], bs))
+    try:
+        bs = lord.connectToBaseStation(com_port, baud_rate)
+        if bs:
+            network = mscl.SyncSamplingNetwork(bs)
+            if len(nodes) > 0:
+                for node in nodes:
+                    if node["type"] == "force":
+                        n = lord.ForceNode(node["address"], node["type"])
+                    elif node["type"] == "temp":
+                        print("got here")
+                        n = lord.TempNode(node["address"], node["type"])
+                    node_obj.append(n)
+                    network.addNode(n.connectNode(bs))
+                    #network.addNode(lord.connectToNode(node["address"], bs))
 
-        network.applyConfiguration()
-        network.startSampling()
+            network.applyConfiguration()
+            network.startSampling()
 
-        while True:
-            TIMEOUT = 1000 # 500ms
-            val = lord.parseData(bs.getData(TIMEOUT))
-            if val is not None:
-                print(val)
-                print(thingworx.putDataToThing("LordThing", "temp", val))
+            while True:
+                TIMEOUT = 1000 # 500ms
+                val = lord.parseData(bs.getData(TIMEOUT))
+                if val is not None:
+                    print(val)
+                    print(thingworx.putDataToThing("LordThing", "temp", val))
 
+    except KeyboardInterrupt:
+        for node in node_obj:
+            node.cleanUp()
+    except Exception as e:
+        print("Error: " + str(e))
+            
 if __name__ == "__main__":
     main()
