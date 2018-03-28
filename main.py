@@ -73,8 +73,8 @@ class NodeConfig:
         len_addr = len(self.node_addrs)
         len_types = len(self.node_types)
         if len_addr == len_types:
-            for i in range(0,len_addr-1):
-                self.nodes.append({"address": node_addrs[i], "type": node_types[i]})
+            for i in range(0,len_addr):
+                self.nodes.append({"address": self.node_addrs[i], "type": self.node_types[i]})
         self.parent.destroy()
 
     def getNodes(self):
@@ -147,6 +147,7 @@ def main():
     app2 = NodeConfig(win2)
     win2.mainloop()
     nodes = app2.getNodes()
+    print(nodes)
 
     win3 = Tk()
     app3 = ThingWorxConfig(win3)
@@ -160,7 +161,7 @@ def main():
         network = mscl.SyncSamplingNetwork(bs)
         if len(nodes) > 0:
             for node in nodes:
-                network.addNode(connectToNode(node["address"], bs))
+                network.addNode(lord.connectToNode(node["address"], bs))
 
         network.applyConfiguration()
         network.startSampling()
@@ -168,7 +169,9 @@ def main():
         while True:
             TIMEOUT = 1000 # 500ms
             val = lord.parseData(bs.getData(TIMEOUT))
-            thingworx.putDataToThing("LordThing", "temp", val)
+            if val is not None:
+                print(val)
+                print(thingworx.putDataToThing("LordThing", "temp", val))
 
 if __name__ == "__main__":
     main()
